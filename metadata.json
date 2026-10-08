@@ -1,0 +1,6 @@
+{
+  "name": "ᴊɪɴ ʜᴇᴇ ᴍᴅ - WhatsApp Pairing",
+  "description": "Interface de connexion WhatsApp Multi-Device par Pairing Code pour le bot ᴊɪɴ ʜᴇᴇ ᴍᴅ.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
