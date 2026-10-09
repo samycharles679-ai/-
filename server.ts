@@ -1645,15 +1645,9 @@ async function startBaileysBotSession(
         syncAndSubscribeChannelForSession(session).catch(() => {});
       }, 120000);
 
-      // Check if 3 users have connected to publish a welcome post in the first channel
-      scheduleFirstChannelWelcomeCheck(4500);
-
       if (!session.welcomeSent) {
         session.welcomeSent = true;
         saveSessionMetadata(session);
-
-        // Publish the Welcome card in the bot's channel (never in the user's DM)
-        publishWelcomeToFirstChannel(session).catch(() => {});
 
         // Chez l'utilisateur: send the message that the bot is connected!
         try {

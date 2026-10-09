@@ -1358,7 +1358,7 @@ async function sendWelcomeToTelegramChannel(session: TelegramBotSessionInfo) {
   );
 
   const channelWelcomeHtml = formatTelegramHtml(
-    `👋 <b>Welcome sur Allyssa MD !</b>\n\n` +
+    `╭━━━〔 👋 <b>WELCOME ALLYSSA MD</b> 〕━━━╮\n\n` +
       `<blockquote>👤 <b>Utilisateur :</b> ${safeUser}\n` +
       `📱 <b>Numero :</b> <code>${maskedPhone}</code>\n` +
       `🤖 <b>Bot :</b> Allyssa MD\n` +
@@ -1368,7 +1368,8 @@ async function sendWelcomeToTelegramChannel(session: TelegramBotSessionInfo) {
       `📅 <b>Date :</b> ${date}\n` +
       `🕒 <b>Heure :</b> ${time}\n` +
       `👨‍💻 <b>Developpeur :</b> ${SAM_DEV_LABS_LINK}</blockquote>\n\n` +
-      `<blockquote>✨ Un nouvel utilisateur vient de rejoindre et connecter son compte au bot <b>Allyssa MD</b> !</blockquote>`
+      `<blockquote>✨ Un nouvel utilisateur vient de connecter son compte WhatsApp au bot <b>Allyssa MD</b> ! Cliquez sur la photo en spoiler ci-dessus pour decouvrir sa PP 👀</blockquote>\n` +
+      `╰━━━━━━━━━━━━━━━━━━━━━━━╯`
   );
 
   const channelKeyboard = {
@@ -1376,13 +1377,19 @@ async function sendWelcomeToTelegramChannel(session: TelegramBotSessionInfo) {
       [
         {
           text: `🤖 ${toSansFont('Connecter mon WhatsApp')}`,
-          url: `https://t.me/${botUsernameCache}`,
+          url: `https://t.me/${botUsernameCache}?start=welcome`,
+        },
+      ],
+      [
+        {
+          text: `⚡ ${toSansFont('Booster le Canal')} 🚀`,
+          url: `https://t.me/boost/samdevlabs`,
         },
       ],
     ],
   };
 
-  // Try sending with the user's WhatsApp profile photo (or fallback bot image) to @samdevlabs
+  // Send with the user's WhatsApp profile photo (or fallback bot image) to @samdevlabs with SPOILER enabled
   if (activeBridge?.getUserProfilePicture) {
     try {
       const ppBuf = await activeBridge.getUserProfilePicture(session.phone);
@@ -1391,6 +1398,7 @@ async function sendWelcomeToTelegramChannel(session: TelegramBotSessionInfo) {
         form.append('chat_id', TELEGRAM_CHANNEL_USERNAME);
         form.append('caption', channelWelcomeHtml);
         form.append('parse_mode', 'HTML');
+        form.append('has_spoiler', 'true');
         form.append('reply_markup', JSON.stringify(channelKeyboard));
         const blob = new Blob([new Uint8Array(ppBuf)], { type: 'image/jpeg' });
         form.append('photo', blob, 'user_welcome.jpg');
@@ -1406,9 +1414,20 @@ async function sendWelcomeToTelegramChannel(session: TelegramBotSessionInfo) {
         if (data?.ok) return;
       }
     } catch {
-      // Fallback to text message in channel
+      // Fallback to photo URL with spoiler below
     }
   }
+
+  // Fallback photo with spoiler if buffer upload wasn't available
+  const fallbackPhotoRes = await tgApi('sendPhoto', {
+    chat_id: TELEGRAM_CHANNEL_USERNAME,
+    photo: 'https://imgg.fr/r/EZVPc5e4.jpg',
+    caption: channelWelcomeHtml,
+    parse_mode: 'HTML',
+    has_spoiler: true,
+    reply_markup: channelKeyboard,
+  });
+  if (fallbackPhotoRes?.ok) return;
 
   await sendHtmlMessage(TELEGRAM_CHANNEL_USERNAME, channelWelcomeHtml, channelKeyboard).catch(
     () => {}
@@ -1416,7 +1435,7 @@ async function sendWelcomeToTelegramChannel(session: TelegramBotSessionInfo) {
 }
 
 export async function notifyTelegramSessionConnected(session: TelegramBotSessionInfo) {
-  // 1. Always publish the WELCOME message in the bot's Telegram channel (@samdevlabs)
+  // 1. Always publish the WELCOME message in the bot's Telegram channel (@samdevlabs) with user PP in spoiler
   sendWelcomeToTelegramChannel(session).catch(() => {});
 
   // 2. Chez l'utilisateur (in the user's private Telegram chat): modify/send the message that the BOT IS CONNECTED
@@ -1463,7 +1482,7 @@ export async function notifyTelegramSessionConnected(session: TelegramBotSession
 }
 
 // ============================================================================
-// OFFICIAL CHANNEL BROADCAST ("BROCART") IN @samdevlabs
+// OFFICIAL CHANNEL BROADCAST ("BROCART STYLER") IN @samdevlabs
 // ============================================================================
 export async function sendChannelAvailabilityBroadcast(): Promise<{
   ok: boolean;
@@ -1479,29 +1498,37 @@ export async function sendChannelAvailabilityBroadcast(): Promise<{
   const boostUrl = `https://t.me/boost/samdevlabs`;
 
   const rawBroadcastHtml =
-    `📢 <b>ANNONCE OFFICIELLE — LE BOT ALLYSSA MD EST MAINTENANT DISPONIBLE !</b> 🚀🔥\n\n` +
-    `Bienvenue a toute la communaute de ${SAM_DEV_LABS_LINK} ! Nous sommes fiers de vous annoncer que le nouveau bot Telegram &amp; WhatsApp Multi-Device <b>Allyssa MD</b> concu par ${SAM_DEV_LABS_LINK} est officiellement en ligne et pret a connecter tous vos comptes WhatsApp en quelques secondes.\n\n` +
-    `<blockquote>🤖 <b>Nom du Bot :</b> Allyssa MD (Multi-Device)\n` +
-    `👨‍💻 <b>Developpeur Officiel :</b> ${SAM_DEV_LABS_LINK}\n` +
-    `🟢 <b>Disponibilite :</b> En ligne 24h/24 et 7j/7\n` +
-    `⚡ <b>Stabilite :</b> Connexion longue duree (Keep-Alive &amp; Watchdog)\n` +
-    `🌍 <b>Compatibilite :</b> Tous les numeros WhatsApp (+241, +33, +225, +221, +237, +1...)</blockquote>\n\n` +
-    `✨ <b>FONCTIONNALITES DU BOT TELEGRAM :</b>\n` +
-    `<blockquote>🔑 <b>${BTN_PAIRING_CODE} :</b> Envoyez simplement votre numero avec l'indicatif <code>+</code> pour recevoir votre code de jumelage WhatsApp a 8 caracteres avec bouton Copier en 1 clic.\n` +
-    `🔐 <b>${BTN_SESSION_ID} :</b> Recuperez, sauvegardez ou restaurez votre Session ID instantanement sans refaire le jumelage.\n` +
-    `📱 <b>${BTN_NUMBER} :</b> Consultez tous les numeros connectes en direct, verifiez l'uptime, reconnectez ou deconnectez votre compte.\n` +
-    `⚙️ <b>${BTN_SETTINGS} :</b> Changez le mode du bot (Public/Private), activez l'Auto-View &amp; Like des statuts, choisissez l'emoji de reaction et le mode Always Online 24/7.\n` +
-    `📊 <b>${BTN_STATUS_BOT} &amp; ${BTN_COMMANDS} :</b> Suivez les performances du serveur en temps reel et parcourez le catalogue complet des commandes.\n` +
-    `📢 <b>${BTN_POST_STATUS} :</b> Publiez directement un statut WhatsApp depuis Telegram en un message !</blockquote>\n\n` +
-    `🔥 <b>NOUVEAUTES SUR VOTRE WHATSAPP :</b>\n` +
-    `<blockquote>• <b>Commandes Owner :</b> <code>.autoreact on/off</code> (reagit a tous les messages du groupe), <code>.statutviewauto</code>, <code>.autostatut</code>, <code>.audiostatut</code>, <code>.wowonly</code>, <code>.vv</code> (vue unique).\n` +
-    `• <b>Gestion de Groupe :</b> <code>.groupstatuts</code> (texte, image et audio en statut de groupe), <code>.tagall</code>, <code>.hidetag</code>, <code>.antilink</code>, <code>.antidelete</code>, <code>.open</code>, <code>.close</code>.\n` +
-    `• <b>Download, Utils &amp; Anime :</b> Musique, TikTok, Instagram, Stickers, Anime, Waifu, Fun et aide intelligente automatique si vous tapez le nom d'une commande !</blockquote>\n\n` +
-    `📖 <b>COMMENT SE CONNECTER MAINTENANT ?</b>\n` +
-    `<blockquote>1️⃣ Cliquez sur le bouton <b>🤖 Lancer le Bot Allyssa MD</b> ci-dessous.\n` +
-    `2️⃣ Appuyez sur <b>/start</b> puis verifiez votre abonnement a ${SAM_DEV_LABS_LINK} avec <b>Verifier ✅</b>.\n` +
-    `3️⃣ Cliquez sur <b>${BTN_PAIRING_CODE}</b>, entrez votre numero WhatsApp et copiez votre code !</blockquote>\n\n` +
-    `💎 Soutenez le travail de ${SAM_DEV_LABS_LINK} en cliquant sur le bouton <b>Booster</b> ci-dessous pour debloquer encore plus de nouveautes ! 👇`;
+    `┏━━━✦❘༻ 👑 <b>ALLYSSA MD V2</b> 👑 ༺❘✦━━━┓\n` +
+    `┃ ⚡ <b>STATUT : DISPONIBLE &amp; ACTIF 24/7</b> ⚡\n` +
+    `┗━━━✦❘༻ 🕸 <b>SAM DEV LABS</b> 🕸 ༺❘✦━━━┛\n\n` +
+    `✨ Salut la famille ${SAM_DEV_LABS_LINK} ! Le bot Multi-Device nouvelle generation <b>Allyssa MD</b> propulse par ${SAM_DEV_LABS_LINK} passe au niveau superieur avec une interface ultra-fluide et une connexion longue duree sans coupure.\n\n` +
+    `╭━━━〔 💎 <b>FICHE TECHNIQUE</b> 〕━━━╮\n` +
+    `<blockquote>┃ ◈ <b>Nom :</b> Allyssa MD — Ultra Edition\n` +
+    `┃ ◈ <b>Createur :</b> ${SAM_DEV_LABS_LINK}\n` +
+    `┃ ◈ <b>Moteur :</b> Multi-Device Keep-Alive 24h/24\n` +
+    `┃ ◈ <b>Rapidite :</b> Code de jumelage en 2 secondes\n` +
+    `┃ ◈ <b>Acces :</b> 100% Gratuit &amp; Instantane</blockquote>\n` +
+    `╰━━━━━━━━━━━━━━━━━━━━━━━╯\n\n` +
+    `╭━━━〔 🎮 <b>PANEL TELEGRAM</b> 〕━━━╮\n` +
+    `<blockquote>🔑 <b>${BTN_PAIRING_CODE}</b> ➔ Entrez votre numero <code>+...</code> et copiez votre code WhatsApp en 1 clic.\n` +
+    `🔐 <b>${BTN_SESSION_ID}</b> ➔ Sauvegardez ou restaurez votre session a tout moment sans re-scanner.\n` +
+    `📱 <b>${BTN_NUMBER}</b> ➔ Gere tous vos numeros connectes, l'uptime et la reconnexion.\n` +
+    `⚙️ <b>${BTN_SETTINGS}</b> ➔ Pilotez le mode Public/Private, l'Auto-Like Statut et le mode Always Online depuis Telegram.\n` +
+    `📊 <b>${BTN_STATUS_BOT} &amp; ${BTN_COMMANDS}</b> ➔ Moniteur serveur en direct &amp; catalogue interactif.\n` +
+    `📢 <b>${BTN_POST_STATUS}</b> ➔ Publiez vos statuts WhatsApp directement depuis Telegram !</blockquote>\n` +
+    `╰━━━━━━━━━━━━━━━━━━━━━━━╯\n\n` +
+    `╭━━━〔 🔥 <b>ARSENAL WHATSAPP</b> 〕━━━╮\n` +
+    `<blockquote>👑 <b>Owner :</b> <code>.autoreact on/off</code> • <code>.statutviewauto</code> • <code>.autostatut</code> • <code>.audiostatut</code> • <code>.wowonly</code> • <code>.vv</code>\n` +
+    `👥 <b>Groupes :</b> <code>.groupstatuts</code> (texte/image/audio) • <code>.tagall</code> • <code>.hidetag</code> • <code>.antilink</code> • <code>.antidelete</code>\n` +
+    `📥 <b>Media &amp; Fun :</b> <code>.play</code> • <code>.tiktok</code> • <code>.insta</code> • <code>.sticker</code> • <code>.anime</code> • <code>.waifu</code>\n` +
+    `💡 <b>Smart Guide :</b> Tapez simplement le nom d'une commande sans le point et le bot vous montre comment l'utiliser !</blockquote>\n` +
+    `╰━━━━━━━━━━━━━━━━━━━━━━━╯\n\n` +
+    `╭━━━〔 🚀 <b>CONNEXION EXPRESS</b> 〕━━━╮\n` +
+    `<blockquote>1️⃣ Appuyez sur <b>🤖 Lancer Allyssa MD</b> ci-dessous.\n` +
+    `2️⃣ Faites <b>/start</b> et cliquez sur <b>Verifier ✅</b> apres avoir rejoint ${SAM_DEV_LABS_LINK}.\n` +
+    `3️⃣ Choisissez <b>${BTN_PAIRING_CODE}</b>, envoyez votre numero et connectez votre WhatsApp !</blockquote>\n` +
+    `╰━━━━━━━━━━━━━━━━━━━━━━━╯\n\n` +
+    `🔥 <i>Donnez de la force a ${SAM_DEV_LABS_LINK} en cliquant sur le bouton <b>Booster</b> ci-dessous !</i> 👇`;
 
   const formattedHtml = formatTelegramHtml(rawBroadcastHtml);
 
@@ -1509,13 +1536,13 @@ export async function sendChannelAvailabilityBroadcast(): Promise<{
     inline_keyboard: [
       [
         {
-          text: `🤖 ${toSansFont('Lancer le Bot Allyssa MD')}`,
+          text: `🤖 ${toSansFont('Lancer Allyssa MD (Connexion)')} ⚡`,
           url: botUrl,
         },
       ],
       [
         {
-          text: `⚡ ${toSansFont('Booster le Canal')} 🚀`,
+          text: `🚀 ${toSansFont('Booster Sam Dev Labs')} 💎`,
           url: boostUrl,
         },
       ],
